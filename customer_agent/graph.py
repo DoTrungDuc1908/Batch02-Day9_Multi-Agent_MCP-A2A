@@ -12,14 +12,17 @@ via a closure — these are bound per-request in agent_executor.py.
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 
 from langchain_core.tools import tool
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.prebuilt import create_react_agent
 
 from common.llm import get_llm
 
 logger = logging.getLogger(__name__)
+_checkpointer = InMemorySaver()
 
 CUSTOMER_SYSTEM_PROMPT = """You are a helpful legal assistant at the front desk of a multi-agent
 legal services platform. Your job is to:
@@ -92,5 +95,8 @@ def build_graph(trace_id: str, context_id: str, depth: int) -> Any:
         model=llm,
         tools=[delegate_to_legal_agent],
         prompt=CUSTOMER_SYSTEM_PROMPT,
+        checkpointer=_checkpointer
+        if os.getenv("ENABLE_MEMORY", "true").lower() in {"1", "true", "yes", "on"}
+        else None,
     )
     return graph

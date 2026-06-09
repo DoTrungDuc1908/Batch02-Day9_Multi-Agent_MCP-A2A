@@ -81,6 +81,16 @@ LEGAL_KNOWLEDGE = [
             "public interest (Winter v. Natural Resources Defense Council, 2008)."
         ),
     },
+    {
+        "id": "labor_law",
+        "keywords": ["lao dong", "sa thai", "hop dong lao dong", "labor", "termination"],
+        "text": (
+            "Theo Bo luat Lao dong Viet Nam 2019, nguoi su dung lao dong co the don phuong "
+            "cham dut hop dong trong cac truong hop: nguoi lao dong thuong xuyen khong hoan "
+            "thanh cong viec, om dau/tai nan dieu tri dai ngay chua khoi, thien tai/hoa hoan, "
+            "hoac nguoi lao dong du tuoi nghi huu."
+        ),
+    },
 ]
 
 
@@ -135,7 +145,22 @@ def calculate_damages(breach_type: str, contract_value: float) -> str:
     )
 
 
-TOOLS = [search_legal_database, calculate_damages]
+@tool
+def check_statute_of_limitations(case_type: str) -> str:
+    """Check the statute of limitations for a case type.
+
+    Args:
+        case_type: Case type: contract, tort, or property.
+    """
+    limits = {
+        "contract": "4 years (UCC Section 2-725)",
+        "tort": "2-3 years depending on state law",
+        "property": "5 years",
+    }
+    return limits.get(case_type.lower(), "Unknown; consult the governing jurisdiction.")
+
+
+TOOLS = [search_legal_database, calculate_damages, check_statute_of_limitations]
 
 QUESTION = "What are the legal consequences if a company breaches a non-disclosure agreement?"
 

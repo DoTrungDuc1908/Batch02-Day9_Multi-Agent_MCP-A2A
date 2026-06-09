@@ -15,4 +15,6 @@ def get_llm() -> ChatOpenAI:
         model=os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4-5"),
         openai_api_key=os.getenv("OPENROUTER_API_KEY"),
         openai_api_base="https://openrouter.ai/api/v1",
+        temperature=float(os.getenv("OPENROUTER_TEMPERATURE", "0.3")),
+        max_tokens=int(os.getenv("OPENROUTER_MAX_TOKENS", "128")),
     )

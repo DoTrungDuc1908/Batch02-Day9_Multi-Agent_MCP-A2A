@@ -19,7 +19,10 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from common.llm import get_llm
 
-QUESTION = "What are the legal consequences if a company breaches a non-disclosure agreement?"
+QUESTION = (
+    "If an employer terminates an employee after a data breach investigation, "
+    "what legal issues should both sides consider?"
+)
 
 
 async def main():

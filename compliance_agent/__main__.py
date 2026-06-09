@@ -16,6 +16,8 @@ from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore
 from a2a.types import AgentCapabilities, AgentCard, AgentSkill
 
+from common.auth import add_api_key_middleware
+from common.metrics import add_metrics
 from common.registry_client import register
 from compliance_agent.agent_executor import ComplianceAgentExecutor
 
@@ -91,6 +93,8 @@ async def main() -> None:
         http_handler=request_handler,
     )
     app = app_builder.build()
+    add_metrics(app, "compliance_agent")
+    add_api_key_middleware(app)
 
     config = uvicorn.Config(app, host="0.0.0.0", port=PORT, log_level="info")
     server = uvicorn.Server(config)

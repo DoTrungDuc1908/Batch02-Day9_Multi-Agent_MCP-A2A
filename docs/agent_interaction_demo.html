@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>A2A Agent Interaction Demo</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #14213d;
+      --muted: #586174;
+      --line: #d7dde8;
+      --law: #0f766e;
+      --tax: #b45309;
+      --compliance: #6d28d9;
+      --customer: #2563eb;
+      --registry: #475569;
+      --paper: #ffffff;
+      --bg: #f6f7fb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    header {
+      padding: 22px clamp(16px, 4vw, 42px) 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(22px, 3vw, 34px);
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      max-width: 900px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(270px, 360px) minmax(0, 1fr);
+      gap: 18px;
+      padding: 18px clamp(16px, 4vw, 42px) 28px;
+    }
+
+    .panel {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      min-width: 0;
+    }
+
+    .controls {
+      padding: 16px;
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px 11px;
+      font: inherit;
+      color: var(--ink);
+      background: #fff;
+    }
+
+    textarea {
+      min-height: 108px;
+      resize: vertical;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .toggle-row input { width: 18px; height: 18px; }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .primary { color: white; background: var(--customer); }
+    .secondary { color: var(--ink); background: #e8edf7; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 20px;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 640px;
+    }
+
+    .diagram {
+      position: relative;
+      min-height: 360px;
+      border-bottom: 1px solid var(--line);
+      overflow: hidden;
+      background:
+        linear-gradient(#eef2f8 1px, transparent 1px),
+        linear-gradient(90deg, #eef2f8 1px, transparent 1px),
+        #fbfcff;
+      background-size: 28px 28px;
+    }
+
+    .agent {
+      position: absolute;
+      width: 150px;
+      min-height: 72px;
+      border: 2px solid currentColor;
+      border-radius: 8px;
+      background: white;
+      padding: 10px;
+      box-shadow: 0 8px 20px rgba(20, 33, 61, .08);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .agent.active {
+      transform: translateY(-4px);
+      box-shadow: 0 13px 28px rgba(20, 33, 61, .17);
+    }
+
+    .agent b { display: block; font-size: 14px; }
+    .agent span { color: var(--muted); font-size: 12px; }
+
+    .customer { color: var(--customer); left: 7%; top: 42%; }
+    .registry { color: var(--registry); left: 41%; top: 6%; }
+    .law { color: var(--law); left: 41%; top: 42%; }
+    .tax { color: var(--tax); right: 7%; top: 20%; }
+    .compliance { color: var(--compliance); right: 7%; top: 62%; }
+
+    svg.links {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .links path {
+      fill: none;
+      stroke: #9aa6ba;
+      stroke-width: 2;
+      stroke-dasharray: 6 6;
+    }
+
+    .packet {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--customer);
+      box-shadow: 0 0 0 5px rgba(37, 99, 235, .18);
+      opacity: 0;
+      transform: translate(-50%, -50%);
+    }
+
+    .packet.run { animation: travel var(--duration, 1s) linear forwards; }
+
+    @keyframes travel {
+      0% { opacity: 0; left: var(--x1); top: var(--y1); }
+      8% { opacity: 1; }
+      92% { opacity: 1; }
+      100% { opacity: 0; left: var(--x2); top: var(--y2); }
+    }
+
+    .timeline {
+      padding: 14px 16px 16px;
+      overflow: auto;
+    }
+
+    .event {
+      display: grid;
+      grid-template-columns: 112px 1fr;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #edf0f6;
+      color: var(--muted);
+    }
+
+    .event.active { color: var(--ink); }
+    .event strong { color: inherit; }
+
+    @media (max-width: 840px) {
+      main { grid-template-columns: 1fr; }
+      .workspace { min-height: 580px; }
+      .agent { width: 132px; }
+      .customer { left: 4%; }
+      .law, .registry { left: 36%; }
+      .tax, .compliance { right: 4%; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Legal Multi-Agent A2A Demo</h1>
+    <p class="subtitle">Mo phong luong tu Customer Agent den Registry, Law Agent, Tax Agent va Compliance Agent. Bat FAST_ROUTING de thay viec bo qua mot lan LLM routing co the giam latency.</p>
+  </header>
+
+  <main>
+    <section class="panel controls">
+      <label for="question">Cau hoi</label>
+      <textarea id="question">If a company breaks a contract, avoids taxes, and leaks customer data, what are the legal consequences?</textarea>
+
+      <label for="scenario">Scenario</label>
+      <select id="scenario">
+        <option value="full">Tax + Compliance + Privacy</option>
+        <option value="tax">Tax only</option>
+        <option value="plain">General legal only</option>
+      </select>
+
+      <div class="toggle-row">
+        <input id="fast" type="checkbox" checked>
+        <span>FAST_ROUTING enabled</span>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="run">Run Flow</button>
+        <button class="secondary" id="reset">Reset</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <b id="latency">0.0s</b>
+          <span>simulated latency</span>
+        </div>
+        <div class="stat">
+          <b id="calls">0</b>
+          <span>LLM calls</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel workspace">
+      <div class="diagram" id="diagram">
+        <svg class="links" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d="M18 52 C28 52 32 52 41 52"></path>
+          <path d="M49 42 C49 30 49 24 49 18"></path>
+          <path d="M55 52 C66 40 72 30 82 30"></path>
+          <path d="M55 58 C66 66 72 72 82 72"></path>
+          <path d="M55 52 C66 52 72 52 82 52"></path>
+        </svg>
+        <div class="agent customer" data-agent="customer"><b>Customer Agent</b><span>:10100</span></div>
+        <div class="agent registry" data-agent="registry"><b>Registry</b><span>:10000</span></div>
+        <div class="agent law" data-agent="law"><b>Law Agent</b><span>:10101</span></div>
+        <div class="agent tax" data-agent="tax"><b>Tax Agent</b><span>:10102</span></div>
+        <div class="agent compliance" data-agent="compliance"><b>Compliance Agent</b><span>:10103</span></div>
+        <div class="packet" id="packet"></div>
+      </div>
+      <div class="timeline" id="timeline"></div>
+    </section>
+  </main>
+
+  <script>
+    const routes = {
+      customer: ["14%", "52%"],
+      registry: ["49%", "18%"],
+      law: ["49%", "52%"],
+      tax: ["86%", "30%"],
+      compliance: ["86%", "72%"]
+    };
+
+    const timeline = document.getElementById("timeline");
+    const packet = document.getElementById("packet");
+    const latency = document.getElementById("latency");
+    const calls = document.getElementById("calls");
+    const fast = document.getElementById("fast");
+    const scenario = document.getElementById("scenario");
+
+    function reset() {
+      timeline.innerHTML = "";
+      latency.textContent = "0.0s";
+      calls.textContent = "0";
+      document.querySelectorAll(".agent").forEach(el => el.classList.remove("active"));
+      packet.classList.remove("run");
+    }
+
+    function eventLine(time, title, detail) {
+      const row = document.createElement("div");
+      row.className = "event active";
+      row.innerHTML = `<strong>${time}</strong><div><strong>${title}</strong><br>${detail}</div>`;
+      timeline.appendChild(row);
+      timeline.scrollTop = timeline.scrollHeight;
+    }
+
+    function activate(name) {
+      document.querySelectorAll(".agent").forEach(el => el.classList.remove("active"));
+      const node = document.querySelector(`[data-agent="${name}"]`);
+      if (node) node.classList.add("active");
+    }
+
+    function move(from, to, seconds) {
+      return new Promise(resolve => {
+        packet.classList.remove("run");
+        void packet.offsetWidth;
+        packet.style.setProperty("--x1", routes[from][0]);
+        packet.style.setProperty("--y1", routes[from][1]);
+        packet.style.setProperty("--x2", routes[to][0]);
+        packet.style.setProperty("--y2", routes[to][1]);
+        packet.style.setProperty("--duration", `${seconds}s`);
+        packet.classList.add("run");
+        setTimeout(resolve, seconds * 1000);
+      });
+    }
+
+    async function run() {
+      reset();
+      const fastRouting = fast.checked;
+      const selected = scenario.value;
+      const steps = [
+        ["customer", "registry", .55, "Discover Law Agent", "Customer asks Registry for legal_question endpoint."],
+        ["registry", "customer", .35, "Registry Response", "Registry returns Law Agent endpoint."],
+        ["customer", "law", .75, "Delegate to Law Agent", "A2A message includes context_id, trace_id, and depth."],
+        ["law", "registry", .45, "Discover Specialists", "Law Agent looks up Tax and Compliance endpoints."],
+      ];
+
+      if (!fastRouting) {
+        steps.push(["law", "law", .9, "LLM Routing", "Law Agent asks the model which specialists are needed."]);
+      }
+
+      if (selected === "tax" || selected === "full") {
+        steps.push(["law", "tax", .9, "Parallel Tax Call", "Tax Agent analyzes IRS and penalty exposure."]);
+      }
+      if (selected === "full") {
+        steps.push(["law", "compliance", .9, "Parallel Compliance Call", "Compliance Agent analyzes regulatory and privacy exposure."]);
+      }
+      steps.push(["law", "law", .8, "Aggregate", "Law Agent synthesizes specialist responses."]);
+      steps.push(["law", "customer", .65, "Final Response", "Customer Agent returns the final answer to the user."]);
+
+      let elapsed = 0;
+      let llmCalls = fastRouting ? 4 : 5;
+      if (selected === "tax") llmCalls = fastRouting ? 3 : 4;
+      if (selected === "plain") llmCalls = fastRouting ? 2 : 3;
+
+      for (const [from, to, duration, title, detail] of steps) {
+        activate(from);
+        eventLine(`${elapsed.toFixed(1)}s`, title, detail);
+        await move(from, to, duration);
+        elapsed += duration;
+        latency.textContent = `${elapsed.toFixed(1)}s`;
+        calls.textContent = String(llmCalls);
+        activate(to);
+      }
+    }
+
+    document.getElementById("run").addEventListener("click", run);
+    document.getElementById("reset").addEventListener("click", reset);
+    reset();
+  </script>
+</body>
+</html>

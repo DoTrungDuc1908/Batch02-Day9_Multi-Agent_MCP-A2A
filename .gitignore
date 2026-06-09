@@ -2,4 +2,4 @@
 .env
 **cache**
 .claude
-**SOLUTION**
+.run_logs/

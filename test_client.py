@@ -6,17 +6,22 @@ Sends a legal question to the Customer Agent and prints the response.
 import asyncio
 import os
 import sys
+import time
 
 import httpx
 from dotenv import load_dotenv
+from common.auth import auth_headers
 
 load_dotenv()
 
 CUSTOMER_AGENT_URL = os.getenv("CUSTOMER_AGENT_URL", "http://localhost:10100")
 
 QUESTION = (
-    "If a company breaks a contract and avoids taxes, "
-    "what are the legal and regulatory consequences?"
+    os.getenv(
+        "TEST_QUESTION",
+        "If a company breaks a contract and avoids taxes, "
+        "what are the legal and regulatory consequences?",
+    )
 )
 
 
@@ -25,7 +30,7 @@ async def main() -> None:
     print(f"Question: {QUESTION}")
     print("-" * 60)
 
-    async with httpx.AsyncClient(timeout=300.0) as http_client:
+    async with httpx.AsyncClient(timeout=300.0, headers=auth_headers()) as http_client:
         # Resolve agent card
         card_url = f"{CUSTOMER_AGENT_URL}/.well-known/agent.json"
         try:
@@ -61,14 +66,19 @@ async def main() -> None:
         )
 
         print("Sending request (this may take 30-60s while agents chain)...\n")
+        started_at = time.perf_counter()
         response = await client.send_message(request)
+        latency_seconds = time.perf_counter() - started_at
 
         # Parse response
         result_text = ""
+        task_state = ""
         if hasattr(response, "root"):
             root = response.root
             if hasattr(root, "result"):
                 result = root.result
+                status = getattr(result, "status", None)
+                task_state = str(getattr(status, "state", "") or "")
                 # Task with artifacts
                 if hasattr(result, "artifacts") and result.artifacts:
                     for artifact in result.artifacts:
@@ -82,15 +92,24 @@ async def main() -> None:
                         p = part.root if hasattr(part, "root") else part
                         if hasattr(p, "text"):
                             result_text += p.text
+                elif status and getattr(status, "message", None):
+                    for part in status.message.parts:
+                        p = part.root if hasattr(part, "root") else part
+                        if hasattr(p, "text"):
+                            result_text += p.text
 
         if result_text:
             print("RESPONSE:")
             print("=" * 60)
             print(result_text)
             print("=" * 60)
+            if task_state:
+                print(f"Task state: {task_state}")
+            print(f"Latency: {latency_seconds:.2f}s")
         else:
             print("No text response received. Raw response:")
             print(response)
+            print(f"Latency: {latency_seconds:.2f}s")
 
 
 if __name__ == "__main__":

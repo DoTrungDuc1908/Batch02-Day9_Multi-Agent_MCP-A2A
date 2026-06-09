@@ -32,6 +32,9 @@ When answering, be precise about:
 
 Always note that your response is for educational purposes and the user
 should consult a licensed attorney for specific legal advice.
+
+Keep the response concise: 3-5 bullets, under 180 words, prioritising the
+highest-risk tax consequences and avoiding repeated background explanation.
 """
 
 
